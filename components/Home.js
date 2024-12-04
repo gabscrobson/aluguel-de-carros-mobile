@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Button } from 'react-native';
 import { Search, Calendar } from 'lucide-react-native';
 import { useAuth } from '../contexts/authContext';
 import { CarCard } from '../components/CarCard';
@@ -7,15 +7,29 @@ import { database } from '../firebase/firebase';
 import { ref, get, push } from 'firebase/database';
 import { useNavigation } from '@react-navigation/native';
 import { Header } from './Header';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase/firebase';
 
 export function Home() {
-  const { currentUser, userLoggedIn } = useAuth();
+  const { currentUser, userLoggedIn, isAdmin } = useAuth();
   const navigation = useNavigation();
 
   const [cars, setCars] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && !user.emailVerified) {
+        alert('Por favor, verifique seu email antes de acessar a aplicação.');
+        auth.signOut();
+        navigation.replace('Login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigation]);
 
   useEffect(() => {
     if (!userLoggedIn) {
@@ -34,7 +48,6 @@ export function Home() {
           ...carsData[key],
         }));
         setCars(carsArray);
-        console.log(carsArray);
       } else {
         console.log('No data available');
       }
@@ -51,7 +64,7 @@ export function Home() {
 
   const handleRent = async (car) => {
     if (!startDate || !endDate) {
-      alert('Please select start and end dates');
+      alert('Selecione as datas de retirada e devolução');
       return;
     }
 
@@ -71,6 +84,7 @@ export function Home() {
       await push(carRentalRef, {
         aluguelRef: rentalId,
       });
+        alert('Carro reservado com sucesso!');
     } catch (error) {
       console.error('Error reserving car:', error);
     }
@@ -83,43 +97,44 @@ export function Home() {
         <View style={styles.searchSection}>
             <Text style={styles.headerText}>Encontre o carro perfeito</Text>
             <View style={styles.filtersContainer}>
-            <View style={styles.filterItem}>
-                <Text style={styles.label}>Pesquisar carro</Text>
-                <View style={styles.inputContainer}>
-                <Search style={styles.icon} />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ex: Sedan"
-                    value={searchTerm}
-                    onChangeText={setSearchTerm}
-                />
+                <View style={styles.filterItem}>
+                    <Text style={styles.label}>Pesquisar carro</Text>
+                    <View style={styles.inputContainer}>
+                    <Search style={styles.icon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ex: Sedan"
+                        value={searchTerm}
+                        onChangeText={setSearchTerm}
+                    />
+                    </View>
+                </View>
+                <View style={styles.filterItem}>
+                    <Text style={styles.label}>Data de retirada</Text>
+                    <View style={styles.inputContainer}>
+                    <Calendar style={styles.icon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="YYYY-MM-DD"
+                        value={startDate}
+                        onChangeText={setStartDate}
+                    />
+                    </View>
+                </View>
+                <View style={styles.filterItem}>
+                    <Text style={styles.label}>Data de devolução</Text>
+                    <View style={styles.inputContainer}>
+                    <Calendar style={styles.icon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="YYYY-MM-DD"
+                        value={endDate}
+                        onChangeText={setEndDate}
+                    />
+                    </View>
                 </View>
             </View>
-            <View style={styles.filterItem}>
-                <Text style={styles.label}>Data de retirada</Text>
-                <View style={styles.inputContainer}>
-                <Calendar style={styles.icon} />
-                <TextInput
-                    style={styles.input}
-                    placeholder="YYYY-MM-DD"
-                    value={startDate}
-                    onChangeText={setStartDate}
-                />
-                </View>
-            </View>
-            <View style={styles.filterItem}>
-                <Text style={styles.label}>Data de devolução</Text>
-                <View style={styles.inputContainer}>
-                <Calendar style={styles.icon} />
-                <TextInput
-                    style={styles.input}
-                    placeholder="YYYY-MM-DD"
-                    value={endDate}
-                    onChangeText={setEndDate}
-                />
-                </View>
-            </View>
-            </View>
+            {isAdmin && <Button title='Adicionar Carro' onPress={() => navigation.navigate('Adicionar')} />}
         </View>
 
         <View style={styles.carsSection}>

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { login } from '../firebase/auth';
 import { useAuth } from '../contexts/authContext';
+import { signup } from '../firebase/auth';
 
-export function Login() {
-  const { userLoggedIn } = useAuth();
-  const navigation = useNavigation();
-
+export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const { userLoggedIn } = useAuth();
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (userLoggedIn) {
@@ -19,26 +20,28 @@ export function Login() {
     }
   }, [userLoggedIn, navigation]);
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!isSigningIn) {
-      setIsSigningIn(true);
+  const onSubmit = async () => {
+    if (!isRegistering) {
+      setIsRegistering(true);
       try {
-        await login(email, password);
+        await signup(email, password);
+        Alert.alert('Verificação de Email', 'Por favor, verifique seu email antes de fazer login.');
+        navigation.navigate('Login');
       } catch (error) {
-        console.error('Error signing in:', error);
-        setErrorMessage('Erro ao fazer login');
-        setIsSigningIn(false);
+        console.error('Error signing up:', error);
+        setErrorMessage('Erro ao registrar');
+        setIsRegistering(false);
       } finally {
-        setIsSigningIn(false);
+        setIsRegistering(false);
       }
     }
   };
 
   return (
     <View style={styles.container}>
+      {userLoggedIn && navigation.replace('Home')}
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Login</Text>
+        <Text style={styles.title}>Criar uma nova conta</Text>
         <TextInput
           placeholder="Email"
           value={email}
@@ -54,10 +57,17 @@ export function Login() {
           style={styles.input}
           secureTextEntry
         />
+        <TextInput
+          placeholder="Confirmar senha"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          style={styles.input}
+          secureTextEntry
+        />
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <Button title={isSigningIn ? 'Logando...' : 'Logar'} onPress={onSubmit} disabled={isSigningIn} />
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.link}>Não tem uma conta? Registre-se</Text>
+        <Button title={isRegistering ? 'Registrando...' : 'Registrar'} onPress={onSubmit} disabled={isRegistering} />
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.link}>Já tem uma conta? Login</Text>
         </TouchableOpacity>
       </View>
     </View>

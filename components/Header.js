@@ -8,8 +8,6 @@ export function Header() {
   const { currentUser, isAdmin } = useAuth();
   const navigation = useNavigation();
 
-  console.log(currentUser);
-
   return (
     <View style={styles.header}>
       <Text style={styles.title}>CarRent</Text>
@@ -20,11 +18,6 @@ export function Header() {
         <TouchableOpacity onPress={() => navigation.navigate('Alugueis')}>
           <Text style={styles.navLink}>Seus Aluguéis</Text>
         </TouchableOpacity>
-        {isAdmin && (
-          <TouchableOpacity onPress={() => navigation.navigate('Adicionar')}>
-            <Text style={styles.navLink}>Adicionar Carro</Text>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity onPress={signout}>
           <Text style={styles.navLink}>Sair</Text>
         </TouchableOpacity>
